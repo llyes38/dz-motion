@@ -126,10 +126,14 @@ export default function Home() {
     <div className="min-h-screen bg-[#ffffff] text-[#1a1a1a]">
       <main className="mx-auto max-w-[420px] px-5 py-10">
         <header className="mb-10 text-center">
-          <h1 className="text-2xl font-bold text-[#006233]">DZ Motion 🇩🇿</h1>
-          <div className="mx-auto mt-2 h-0.5 w-12 bg-[#d21034]" />
-          <p className="mt-4 text-base text-[#4a4a4a]">
-            🇩🇿 Ta culture. Ta vibe. Ton style.
+          <h1 className="text-4xl font-bold leading-tight tracking-tight text-[#1a1a1a] sm:text-5xl">
+            La première app qui fait danser ta photo en mode{" "}
+            <span className="text-[#0F6A3C]">DZ</span>
+          </h1>
+          <p className="mx-auto mt-8 max-w-[360px] text-lg text-gray-700 sm:max-w-[420px]">
+            Génère une vidéo Chaoui, Kabyle ou Assimi en quelques clics.
+            <br />
+            <span className="font-semibold">Simple. Rapide. Viral.</span>
           </p>
         </header>
 
