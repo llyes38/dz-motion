@@ -6,9 +6,9 @@ import WhyChoose from "@/components/WhyChoose";
 import Faq from "@/components/Faq";
 
 const DANCES = [
-  { id: "chaoui", label: "Danse Chaoui" },
-  { id: "kabyle", label: "Danse Kabyle" },
-  { id: "assimi", label: "Danse 'Assimi" },
+  { id: "chaoui", label: "Danse Chaoui", videoSrc: "/reference/chaoui.mp4" },
+  { id: "kabyle", label: "Danse Kabyle", videoSrc: "/reference/kabyle.mp4" },
+  { id: "assimi", label: "Danse 'Assimi", videoSrc: "/reference/assimi.mp4" },
 ] as const;
 
 type ResultState = "idle" | "loading" | "completed" | "error";
@@ -171,7 +171,7 @@ export default function Home() {
           <label className="mb-3 block text-sm font-medium text-[#1a1a1a]">
             Choisis ta danse
           </label>
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-4">
             {DANCES.map((dance) => {
               const isSelected = danceId === dance.id;
               return (
@@ -179,17 +179,35 @@ export default function Home() {
                   key={dance.id}
                   type="button"
                   onClick={() => setDanceId(dance.id)}
-                  className={`flex items-center gap-3 rounded-xl border px-4 py-3.5 text-left text-sm font-medium transition-all duration-200 hover:scale-[1.02] ${
+                  className={`group relative w-full overflow-hidden rounded-2xl border-2 bg-white text-left shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-md ${
                     isSelected
-                      ? "border-2 border-[#006233] bg-[#e9f5ee] text-[#006233]"
-                      : "border border-[#006233]/40 bg-white text-[#1a1a1a] hover:border-[#006233]/60"
+                      ? "border-[#006233] bg-[#e9f5ee] ring-2 ring-[#006233]/30"
+                      : "border-gray-200 hover:border-[#006233]/50"
                   }`}
                 >
-                  {isSelected && (
-                    <span className="h-2 w-2 shrink-0 rounded-full bg-[#d21034]" />
-                  )}
-                  {!isSelected && <span className="h-2 w-2 shrink-0" />}
-                  {dance.label}
+                  <div className="aspect-video w-full overflow-hidden bg-gray-100">
+                    <video
+                      src={dance.videoSrc}
+                      muted
+                      loop
+                      playsInline
+                      autoPlay={isSelected}
+                      className="h-full w-full object-cover"
+                      aria-hidden
+                    />
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <span
+                      className={`font-medium ${
+                        isSelected ? "text-[#006233]" : "text-[#1a1a1a]"
+                      }`}
+                    >
+                      {dance.label}
+                    </span>
+                    {isSelected && (
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#d21034]" />
+                    )}
+                  </div>
                 </button>
               );
             })}
