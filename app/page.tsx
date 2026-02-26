@@ -126,11 +126,11 @@ export default function Home() {
     <div className="min-h-screen bg-[#ffffff] text-[#1a1a1a]">
       <main className="mx-auto max-w-[420px] px-5 py-10">
         <header className="mb-10 rounded-2xl bg-gradient-to-b from-white to-[#f0f7ff] px-6 py-12 text-center sm:py-14">
-          <h1 className="mx-auto max-w-[320px] text-4xl font-extrabold leading-[1.45] tracking-tight text-[#0a0a0a] sm:max-w-[380px] sm:text-5xl sm:leading-[1.4]">
+          <h1 className="mx-auto max-w-[420px] text-3xl font-extrabold leading-[1.3] tracking-tight text-[#0a0a0a] sm:text-4xl sm:leading-[1.25]">
             La première app qui fait danser ta photo en mode{" "}
             <span className="font-serif italic text-[#0F6A3C]">DZ</span>
           </h1>
-          <p className="mx-auto mt-12 max-w-[300px] text-lg font-normal leading-loose text-[#374151] sm:max-w-[340px]">
+          <p className="mx-auto mt-10 max-w-[380px] text-base font-normal leading-relaxed text-[#374151] sm:text-lg">
             Génère une vidéo Chaoui, Kabyle ou Assimi en quelques clics.
             <br />
             <span className="font-semibold text-[#1f2937]">Simple. Rapide. Viral.</span>
