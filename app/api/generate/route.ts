@@ -1,6 +1,7 @@
-import { createKlingJob, getKlingAuthToken } from "@/lib/providers/kling";
+import { createKlingJob, hasKlingAuth } from "@/lib/providers/kling";
+import type { KlingApiError } from "@/lib/providers/kling";
 
-/** Base URL of the app (e.g. https://dz-motion.vercel.app) so Kling can fetch reference videos from /reference/*. No trailing slash. */
+/** Base URL of the app so Kling can fetch reference videos. No trailing slash. */
 function getReferenceVideoUrls(): Record<string, string> {
   const base =
     process.env.NEXT_PUBLIC_APP_URL ??
@@ -37,13 +38,23 @@ function isPublicUrl(url: string): boolean {
   }
 }
 
+function isKlingApiError(err: unknown): err is KlingApiError {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    "message" in err
+  );
+}
+
 export async function POST(request: Request) {
-  const authToken = getKlingAuthToken();
-  if (!authToken) {
+  if (!hasKlingAuth()) {
     return Response.json(
       {
-        error:
-          "Kling API not configured: set KLING_API_KEY or (KLING_ACCESS_KEY + KLING_SECRET_KEY)",
+        ok: false as const,
+        code: 503,
+        message: "Kling non configuré : définir KLING_ACCESS_KEY et KLING_SECRET_KEY",
+        details: null,
       },
       { status: 503 }
     );
@@ -54,7 +65,7 @@ export async function POST(request: Request) {
     body = await request.json();
   } catch {
     return Response.json(
-      { error: "Invalid JSON body" },
+      { ok: false as const, code: 400, message: "Corps JSON invalide", details: null },
       { status: 400 }
     );
   }
@@ -63,34 +74,37 @@ export async function POST(request: Request) {
 
   if (!danceId) {
     return Response.json(
-      { error: "danceId is required" },
+      { ok: false as const, code: 400, message: "danceId requis", details: null },
       { status: 400 }
     );
   }
 
-  // Accept either imageUrl (must be http(s)) or imageDataUrl (for backward compat / UI)
   let imageSource: string | undefined;
   if (imageUrl !== undefined) {
     if (typeof imageUrl !== "string" || !imageUrl.trim()) {
       return Response.json(
-        { error: "imageUrl must be a non-empty string" },
+        { ok: false as const, code: 400, message: "imageUrl doit être une chaîne non vide", details: null },
         { status: 400 }
       );
     }
     if (!isPublicUrl(imageUrl)) {
       return Response.json(
-        { error: "imageUrl must be a public http or https URL" },
+        { ok: false as const, code: 400, message: "imageUrl doit être une URL publique http(s)", details: null },
         { status: 400 }
       );
     }
     imageSource = imageUrl.trim();
-  } else if (imageDataUrl !== undefined && typeof imageDataUrl === "string" && imageDataUrl.trim()) {
+  } else if (
+    imageDataUrl !== undefined &&
+    typeof imageDataUrl === "string" &&
+    imageDataUrl.trim()
+  ) {
     imageSource = imageDataUrl.trim();
   }
 
   if (!imageSource) {
     return Response.json(
-      { error: "imageUrl or imageDataUrl is required" },
+      { ok: false as const, code: 400, message: "imageUrl ou imageDataUrl requis", details: null },
       { status: 400 }
     );
   }
@@ -101,19 +115,35 @@ export async function POST(request: Request) {
   const prompt = DANCE_PROMPTS[danceId] ?? DEFAULT_PROMPT;
 
   try {
-    const jobId = await createKlingJob(authToken, {
+    const jobId = await createKlingJob({
       imageUrl: imageSource,
       referenceVideoUrl,
       prompt,
     });
-    return Response.json({ jobId }, { status: 201 });
+    console.log("[kling] generate started", { danceId, jobId: jobId.slice(0, 8) + "..." });
+    return Response.json({ ok: true as const, jobId }, { status: 201 });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Video generation failed to start";
-    if (process.env.NODE_ENV !== "production") {
-      console.error("[kling] createKlingJob error:", message);
+    if (isKlingApiError(err)) {
+      console.error("[kling] createKlingJob error", err.code, err.message, err.details);
+      return Response.json(
+        {
+          ok: false as const,
+          code: err.code,
+          message: err.message,
+          details: err.details ?? null,
+        },
+        { status: err.code >= 500 ? 502 : 400 }
+      );
     }
+    const message = err instanceof Error ? err.message : "Échec du démarrage de la génération";
+    console.error("[kling] createKlingJob error", message);
     return Response.json(
-      { error: message },
+      {
+        ok: false as const,
+        code: 502,
+        message,
+        details: null,
+      },
       { status: 502 }
     );
   }

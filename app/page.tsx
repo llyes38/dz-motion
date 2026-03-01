@@ -115,6 +115,20 @@ export default function Home() {
         });
         const data = await res.json();
 
+        if (data.ok === false && data.message) {
+          if (pollingRef.current) {
+            clearInterval(pollingRef.current);
+            pollingRef.current = null;
+          }
+          setResultState("error");
+          setErrorMessage(
+            [data.message, data.details ? JSON.stringify(data.details) : null]
+              .filter(Boolean)
+              .join(" — ")
+          );
+          return;
+        }
+
         if (data.status === "completed" && data.videoUrl) {
           if (pollingRef.current) {
             clearInterval(pollingRef.current);
@@ -128,7 +142,7 @@ export default function Home() {
             pollingRef.current = null;
           }
           setResultState("error");
-          setErrorMessage("La génération a échoué.");
+          setErrorMessage(data.message || "La génération a échoué.");
         }
       } catch {
         if (pollingRef.current) {
@@ -154,16 +168,29 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ danceId, imageDataUrl }),
       });
+      const data = await res.json().catch(() => ({}));
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
+      if (data.ok === false) {
+        const msg = [data.message, data.details != null ? (typeof data.details === "string" ? data.details : JSON.stringify(data.details)) : null]
+          .filter(Boolean)
+          .join(" — ");
         setResultState("error");
-        setErrorMessage(data.error || "Erreur lors du démarrage.");
+        setErrorMessage(msg || "Erreur lors du démarrage.");
         return;
       }
 
-      const { jobId } = await res.json();
-      pollStatus(jobId);
+      if (!res.ok) {
+        setResultState("error");
+        setErrorMessage(data.message || "Erreur lors du démarrage.");
+        return;
+      }
+
+      if (data.jobId) {
+        pollStatus(data.jobId);
+      } else {
+        setResultState("error");
+        setErrorMessage("Réponse serveur invalide (pas de jobId).");
+      }
     } catch {
       setResultState("error");
       setErrorMessage("Erreur de connexion.");

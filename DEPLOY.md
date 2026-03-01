@@ -26,8 +26,9 @@ Si GitHub te demande de te connecter : utilise un **Personal Access Token** (Set
 3. **Import** le dépôt `dz-motion` (s’il n’apparaît pas, clique sur **Configure GitHub** et autorise Vercel)
 4. **Framework Preset** : Next.js (détecté automatiquement)
 5. Clique sur **Environment Variables** et ajoute :
-   - **Name** : `KLING_API_KEY`  
-   - **Value** : ta clé API Kling (celle créée sur [Kling](https://klingapi.com) ou sur un gateway compatible)
+   - **Name** : `KLING_ACCESS_KEY` — **Value** : ta clé Access (compte Kling)
+   - **Name** : `KLING_SECRET_KEY` — **Value** : ta clé Secret (compte Kling)
+   - **Name** : `KLING_API_BASE_URL` — **Value** : `https://api-singapore.klingai.com` (optionnel, c’est la valeur par défaut)
 6. Clique sur **Deploy**
 
 À la fin du déploiement, Vercel te donne une URL du type `https://dz-motion-xxx.vercel.app`.
@@ -49,8 +50,8 @@ Si tu ajoutes un **domaine personnalisé** plus tard, tu peux définir dans Verc
 | Étape | Où | Action |
 |-------|-----|--------|
 | 1 | GitHub | Créer le repo, puis `git remote add origin ...` et `git push -u origin master` |
-| 2 | Vercel | Import du repo, ajout de `KLING_API_KEY`, Deploy |
+| 2 | Vercel | Import du repo, ajout de `KLING_ACCESS_KEY` + `KLING_SECRET_KEY` (+ optionnel `KLING_API_BASE_URL`), Deploy |
 
 Ton `.env.local` reste sur ta machine et n’est **jamais** envoyé sur GitHub (il est dans `.gitignore`). La clé est uniquement saisie dans Vercel (Environment Variables).
 
-**Option** : si tu utilises une API Kling avec une autre base URL (ex. API officielle), ajoute aussi la variable `KLING_API_BASE_URL` (ex. `https://api.klingapi.com`). Par défaut l’app utilise un gateway compatible Kling 2.6 Pro motion control.
+L’app utilise le domaine officiel Kling **https://api-singapore.klingai.com** par défaut. Pour un autre domaine, définis `KLING_API_BASE_URL`.
