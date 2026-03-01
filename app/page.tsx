@@ -244,7 +244,7 @@ export default function Home() {
                           loop
                           playsInline
                           preload="metadata"
-                          className="h-full w-full object-contain"
+                          className="h-full w-full object-cover object-center"
                           aria-hidden
                           onError={() => handleVideoError(dance.id)}
                         />
