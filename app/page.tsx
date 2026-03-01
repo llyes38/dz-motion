@@ -22,6 +22,7 @@ export default function Home() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [videoLoadErrors, setVideoLoadErrors] = useState<Set<string>>(new Set());
   const [hoveredDanceId, setHoveredDanceId] = useState<string | null>(null);
+  const [soundUnlocked, setSoundUnlocked] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
 
@@ -219,7 +220,10 @@ export default function Home() {
                 <button
                   key={dance.id}
                   type="button"
-                  onClick={() => setDanceId(dance.id)}
+                  onClick={() => {
+                    setSoundUnlocked(true);
+                    setDanceId(dance.id);
+                  }}
                   onMouseEnter={() => handleCardMouseEnter(dance.id)}
                   onMouseLeave={() => handleCardMouseLeave(dance.id)}
                   className={`group relative w-full overflow-hidden rounded-2xl border-2 bg-white text-left shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-md ${
@@ -240,7 +244,7 @@ export default function Home() {
                             videoRefs.current[dance.id] = el;
                           }}
                           src={dance.videoSrc}
-                          muted
+                          muted={!soundUnlocked || !isSelected}
                           loop
                           playsInline
                           preload="metadata"
