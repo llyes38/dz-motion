@@ -1,4 +1,4 @@
-import { getKlingJob } from "@/lib/providers/runware";
+import { getKlingJob, getKlingAuthToken } from "@/lib/providers/kling";
 
 export async function POST(request: Request) {
   let body: { jobId?: string };
@@ -19,8 +19,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const apiKey = process.env.RUNWARE_API_KEY;
-  if (!apiKey) {
+  const authToken = getKlingAuthToken();
+  if (!authToken) {
     return Response.json(
       { status: "failed" as const },
       { status: 200 }
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await getKlingJob(apiKey, jobId);
+    const result = await getKlingJob(authToken, jobId);
 
     if (result.status === "completed" && result.videoUrl) {
       return Response.json({
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Status check failed";
     if (process.env.NODE_ENV !== "production") {
-      console.error("[runware] getKlingJob error:", message);
+      console.error("[kling] getKlingJob error:", message);
     }
     return Response.json(
       { status: "processing" as const },

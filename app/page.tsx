@@ -9,6 +9,7 @@ const DANCES = [
   { id: "chaoui", label: "Danse Chaoui", videoSrc: "/reference/chaoui.mp4" },
   { id: "kabyle", label: "Danse Kabyle", videoSrc: "/reference/kabyle.mp4" },
   { id: "assimi", label: "Danse 'Assimi", videoSrc: "/reference/assimi.mp4" },
+  { id: "naili", label: "Danse Naili", videoSrc: "/reference/naili.mp4" },
 ] as const;
 
 type ResultState = "idle" | "loading" | "completed" | "error";
@@ -224,7 +225,7 @@ export default function Home() {
           <label className="mb-3 block text-sm font-medium text-[#1a1a1a]">
             Choisis ta danse
           </label>
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {DANCES.map((dance) => {
               const isSelected = danceId === dance.id;
               return (

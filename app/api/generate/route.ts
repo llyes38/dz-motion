@@ -1,6 +1,6 @@
-import { createKlingJob } from "@/lib/providers/runware";
+import { createKlingJob, getKlingAuthToken } from "@/lib/providers/kling";
 
-/** Base URL of the app (e.g. https://dz-motion.vercel.app) so Runware can fetch reference videos from /reference/*. No trailing slash. */
+/** Base URL of the app (e.g. https://dz-motion.vercel.app) so Kling can fetch reference videos from /reference/*. No trailing slash. */
 function getReferenceVideoUrls(): Record<string, string> {
   const base =
     process.env.NEXT_PUBLIC_APP_URL ??
@@ -10,6 +10,7 @@ function getReferenceVideoUrls(): Record<string, string> {
     chaoui: `${base}/reference/chaoui.mp4`,
     kabyle: `${base}/reference/kabyle.mp4`,
     assimi: `${base}/reference/assimi.mp4`,
+    naili: `${base}/reference/naili.mp4`,
   };
 }
 
@@ -23,6 +24,8 @@ const DANCE_PROMPTS: Record<string, string> = {
     "Person doing traditional Kabyle dance from Algeria, elegant movement, cultural dance",
   assimi:
     "Person doing 'Assimi dance from Algeria, rhythmic movement, cultural dance",
+  naili:
+    "Person doing traditional Naili dance from Algeria, smooth movement, cultural dance",
 };
 
 function isPublicUrl(url: string): boolean {
@@ -35,10 +38,13 @@ function isPublicUrl(url: string): boolean {
 }
 
 export async function POST(request: Request) {
-  const apiKey = process.env.RUNWARE_API_KEY;
-  if (!apiKey) {
+  const authToken = getKlingAuthToken();
+  if (!authToken) {
     return Response.json(
-      { error: "Runware API key not configured" },
+      {
+        error:
+          "Kling API not configured: set KLING_API_KEY or (KLING_ACCESS_KEY + KLING_SECRET_KEY)",
+      },
       { status: 503 }
     );
   }
@@ -95,7 +101,7 @@ export async function POST(request: Request) {
   const prompt = DANCE_PROMPTS[danceId] ?? DEFAULT_PROMPT;
 
   try {
-    const jobId = await createKlingJob(apiKey, {
+    const jobId = await createKlingJob(authToken, {
       imageUrl: imageSource,
       referenceVideoUrl,
       prompt,
@@ -104,7 +110,7 @@ export async function POST(request: Request) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Video generation failed to start";
     if (process.env.NODE_ENV !== "production") {
-      console.error("[runware] createKlingJob error:", message);
+      console.error("[kling] createKlingJob error:", message);
     }
     return Response.json(
       { error: message },
