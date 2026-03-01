@@ -83,8 +83,10 @@ export async function createKlingJob(
       positivePrompt: prompt,
       numberResults: 1,
       duration: 5,
+      frameImages: [
+        { inputImage: imageUUID, frame: "first" as const },
+      ],
       inputs: {
-        frameImages: [{ image: imageUUID, frame: "first" as const }],
         referenceVideos: [referenceVideoUrl],
       },
       providerSettings: {
