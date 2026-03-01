@@ -82,7 +82,6 @@ export async function createKlingJob(
       deliveryMethod: "async",
       positivePrompt: prompt,
       numberResults: 1,
-      duration: 5,
       frameImages: [
         { inputImage: imageUUID, frame: "first" as const },
       ],
