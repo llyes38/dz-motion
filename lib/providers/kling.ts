@@ -31,6 +31,14 @@ function getBaseUrl(): string {
   return (process.env.KLING_API_BASE_URL ?? DEFAULT_BASE).replace(/\/$/, "");
 }
 
+function isOfficialKling(base: string): boolean {
+  try {
+    return new URL(base).hostname === "api.klingapi.com";
+  } catch {
+    return false;
+  }
+}
+
 function getHeaders(token: string): HeadersInit {
   return {
     "Content-Type": "application/json",
@@ -86,18 +94,34 @@ export async function createKlingJob(
 ): Promise<string> {
   const { imageUrl, referenceVideoUrl, prompt } = params;
   const base = getBaseUrl();
+  const official = isOfficialKling(base);
 
-  // AIML / Kling 2.6 Pro motion control format
-  const body = {
-    model: "klingai/video-v2-6-pro-motion-control",
-    image_url: imageUrl,
-    video_url: referenceVideoUrl,
-    character_orientation: "video" as const,
-    prompt: prompt || "Person dancing, smooth movement, cultural dance",
-    keep_audio: false,
-  };
+  let path: string;
+  let body: Record<string, unknown>;
 
-  const res = await fetch(`${base}/v2/video/generations`, {
+  if (official) {
+    path = "/v1/videos/motion-create";
+    body = {
+      image_url: imageUrl,
+      motion_url: referenceVideoUrl,
+      prompt: prompt || "Person dancing, smooth movement, cultural dance",
+      keep_audio: false,
+      motion_direction: "video" as const,
+      mode: "professional" as const,
+    };
+  } else {
+    path = "/v2/video/generations";
+    body = {
+      model: "klingai/video-v2-6-pro-motion-control",
+      image_url: imageUrl,
+      video_url: referenceVideoUrl,
+      character_orientation: "video" as const,
+      prompt: prompt || "Person dancing, smooth movement, cultural dance",
+      keep_audio: false,
+    };
+  }
+
+  const res = await fetch(`${base}${path}`, {
     method: "POST",
     headers: getHeaders(authToken),
     body: JSON.stringify(body),
@@ -108,12 +132,14 @@ export async function createKlingJob(
     const msg =
       err?.error?.message ??
       err?.message ??
+      err?.msg ??
       `Video generation failed to start (${res.status})`;
     throw new Error(msg);
   }
 
   const data = await res.json();
-  const id = data?.id ?? data?.task_id ?? data?.data?.task_id;
+  const id =
+    data?.task_id ?? data?.id ?? data?.data?.task_id ?? data?.data?.id;
   if (!id) {
     throw new Error("No task/generation id in response");
   }
@@ -128,9 +154,11 @@ export async function getKlingJob(
   jobId: string
 ): Promise<KlingJobResult> {
   const base = getBaseUrl();
+  const official = isOfficialKling(base);
 
-  // AIML: GET /v2/video/generations?generation_id=...
-  const url = `${base}/v2/video/generations?generation_id=${encodeURIComponent(jobId)}`;
+  const url = official
+    ? `${base}/v1/videos/${encodeURIComponent(jobId)}`
+    : `${base}/v2/video/generations?generation_id=${encodeURIComponent(jobId)}`;
   const res = await fetch(url, {
     method: "GET",
     headers: getHeaders(authToken),
@@ -141,11 +169,21 @@ export async function getKlingJob(
   }
 
   const data = await res.json();
-  const status = data?.status ?? data?.data?.status;
+  const status =
+    data?.status ?? data?.data?.status ?? data?.task_status?.toLowerCase();
 
-  if (status === "completed" || status === "success") {
+  if (
+    status === "completed" ||
+    status === "success" ||
+    status === "succeeded"
+  ) {
     const videoUrl =
-      data?.video?.url ?? data?.data?.video_url ?? data?.data?.response?.[0];
+      data?.video_url ??
+      data?.video?.url ??
+      data?.data?.video_url ??
+      data?.data?.video?.url ??
+      data?.data?.response?.[0] ??
+      data?.result?.video_url;
     if (videoUrl) {
       return { status: "completed", videoUrl };
     }
