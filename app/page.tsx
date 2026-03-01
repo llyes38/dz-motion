@@ -23,6 +23,7 @@ export default function Home() {
   const [videoLoadErrors, setVideoLoadErrors] = useState<Set<string>>(new Set());
   const [hoveredDanceId, setHoveredDanceId] = useState<string | null>(null);
   const [soundUnlocked, setSoundUnlocked] = useState(false);
+  const [mutedByDanceId, setMutedByDanceId] = useState<Record<string, boolean>>({});
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
 
@@ -55,6 +56,16 @@ export default function Home() {
     },
     [danceId, playOnly]
   );
+
+  const toggleMute = useCallback((danceId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSoundUnlocked(true);
+    setMutedByDanceId((prev) => ({
+      ...prev,
+      [danceId]: !(prev[danceId] ?? true),
+    }));
+  }, []);
 
   useEffect(() => {
     if (!hoveredDanceId) playOnly(danceId);
@@ -226,7 +237,7 @@ export default function Home() {
                   }}
                   onMouseEnter={() => handleCardMouseEnter(dance.id)}
                   onMouseLeave={() => handleCardMouseLeave(dance.id)}
-                  className={`group relative w-full overflow-hidden rounded-2xl border-2 bg-white text-left shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-md ${
+                  className={`group relative w-full overflow-hidden rounded-2xl border-2 bg-white text-left shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-md [&_.video-mute-btn]:opacity-0 [&:hover_.video-mute-btn]:opacity-100 ${
                     isSelected
                       ? "border-[#006233] bg-[#e9f5ee] ring-2 ring-[#006233]/30"
                       : "border-gray-200 hover:border-[#006233]/50"
@@ -239,19 +250,34 @@ export default function Home() {
                           Vidéo non disponible. Vérifie le format (MP4 H.264).
                         </div>
                       ) : (
-                        <video
-                          ref={(el) => {
-                            videoRefs.current[dance.id] = el;
-                          }}
-                          src={dance.videoSrc}
-                          muted={!soundUnlocked || !isSelected}
-                          loop
-                          playsInline
-                          preload="metadata"
-                          className="h-full w-full object-cover object-center"
-                          aria-hidden
-                          onError={() => handleVideoError(dance.id)}
-                        />
+                        <div className="relative h-full w-full">
+                          <video
+                            ref={(el) => {
+                              videoRefs.current[dance.id] = el;
+                            }}
+                            src={dance.videoSrc}
+                            muted={mutedByDanceId[dance.id] ?? true}
+                            loop
+                            playsInline
+                            preload="metadata"
+                            className="h-full w-full object-cover object-center"
+                            aria-hidden
+                            onError={() => handleVideoError(dance.id)}
+                          />
+                          <button
+                            type="button"
+                            onClick={(e) => toggleMute(dance.id, e)}
+                            className="video-mute-btn absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white transition-opacity hover:bg-black/70"
+                            title={mutedByDanceId[dance.id] ?? true ? "Activer le son" : "Couper le son"}
+                            aria-label={mutedByDanceId[dance.id] ?? true ? "Activer le son" : "Couper le son"}
+                          >
+                            {(mutedByDanceId[dance.id] ?? true) ? (
+                              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+                            ) : (
+                              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                            )}
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -299,6 +325,7 @@ export default function Home() {
               <video
                 src={videoUrl}
                 controls
+                muted
                 className="w-full rounded-xl"
                 playsInline
               />
