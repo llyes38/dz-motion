@@ -90,7 +90,7 @@ export async function createKlingJob(
         prompt: prompt || "Person dancing, smooth movement, cultural dance",
         duration: 5,
         aspect_ratio: "9:16",
-        mode: "professional",
+        mode: "pro",
         reference_video_url: referenceVideoUrl,
       }
     : {
