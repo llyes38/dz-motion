@@ -228,26 +228,28 @@ export default function Home() {
                       : "border-gray-200 hover:border-[#006233]/50"
                   }`}
                 >
-                  <div className="aspect-video w-full overflow-hidden bg-gray-100">
-                    {videoLoadErrors.has(dance.id) ? (
-                      <div className="flex h-full w-full items-center justify-center bg-gray-200 px-4 text-center text-sm text-gray-600">
-                        Vidéo non disponible. Vérifie le format (MP4 H.264).
-                      </div>
-                    ) : (
-                      <video
-                        ref={(el) => {
-                          videoRefs.current[dance.id] = el;
-                        }}
-                        src={dance.videoSrc}
-                        muted
-                        loop
-                        playsInline
-                        preload="metadata"
-                        className="h-full w-full object-cover"
-                        aria-hidden
-                        onError={() => handleVideoError(dance.id)}
-                      />
-                    )}
+                  <div className="relative w-full overflow-hidden bg-gray-100">
+                    <div className="mx-auto aspect-[9/16] w-full max-w-[240px] sm:max-w-[280px]">
+                      {videoLoadErrors.has(dance.id) ? (
+                        <div className="flex h-full w-full items-center justify-center bg-gray-200 px-4 text-center text-sm text-gray-600">
+                          Vidéo non disponible. Vérifie le format (MP4 H.264).
+                        </div>
+                      ) : (
+                        <video
+                          ref={(el) => {
+                            videoRefs.current[dance.id] = el;
+                          }}
+                          src={dance.videoSrc}
+                          muted
+                          loop
+                          playsInline
+                          preload="metadata"
+                          className="h-full w-full object-contain"
+                          aria-hidden
+                          onError={() => handleVideoError(dance.id)}
+                        />
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center justify-between px-4 py-3">
                     <span
