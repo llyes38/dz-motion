@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import HowItWorks from "@/components/HowItWorks";
 import WhyChoose from "@/components/WhyChoose";
 import Faq from "@/components/Faq";
@@ -20,7 +20,44 @@ export default function Home() {
   const [resultState, setResultState] = useState<ResultState>("idle");
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [videoLoadErrors, setVideoLoadErrors] = useState<Set<string>>(new Set());
+  const [hoveredDanceId, setHoveredDanceId] = useState<string | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+
+  const handleVideoError = useCallback((danceId: string) => {
+    setVideoLoadErrors((prev) => new Set(prev).add(danceId));
+  }, []);
+
+  const playOnly = useCallback((id: string | null) => {
+    DANCES.forEach((d) => {
+      const el = videoRefs.current[d.id];
+      if (el) {
+        if (d.id === id) el.play().catch(() => {});
+        else el.pause();
+      }
+    });
+  }, []);
+
+  const handleCardMouseEnter = useCallback(
+    (id: string) => {
+      setHoveredDanceId(id);
+      playOnly(id);
+    },
+    [playOnly]
+  );
+
+  const handleCardMouseLeave = useCallback(
+    (id: string) => {
+      setHoveredDanceId(null);
+      playOnly(danceId);
+    },
+    [danceId, playOnly]
+  );
+
+  useEffect(() => {
+    if (!hoveredDanceId) playOnly(danceId);
+  }, [danceId, hoveredDanceId, playOnly]);
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -183,6 +220,8 @@ export default function Home() {
                   key={dance.id}
                   type="button"
                   onClick={() => setDanceId(dance.id)}
+                  onMouseEnter={() => handleCardMouseEnter(dance.id)}
+                  onMouseLeave={() => handleCardMouseLeave(dance.id)}
                   className={`group relative w-full overflow-hidden rounded-2xl border-2 bg-white text-left shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-md ${
                     isSelected
                       ? "border-[#006233] bg-[#e9f5ee] ring-2 ring-[#006233]/30"
@@ -190,15 +229,25 @@ export default function Home() {
                   }`}
                 >
                   <div className="aspect-video w-full overflow-hidden bg-gray-100">
-                    <video
-                      src={dance.videoSrc}
-                      muted
-                      loop
-                      playsInline
-                      autoPlay={isSelected}
-                      className="h-full w-full object-cover"
-                      aria-hidden
-                    />
+                    {videoLoadErrors.has(dance.id) ? (
+                      <div className="flex h-full w-full items-center justify-center bg-gray-200 px-4 text-center text-sm text-gray-600">
+                        Vidéo non disponible. Vérifie le format (MP4 H.264).
+                      </div>
+                    ) : (
+                      <video
+                        ref={(el) => {
+                          videoRefs.current[dance.id] = el;
+                        }}
+                        src={dance.videoSrc}
+                        muted
+                        loop
+                        playsInline
+                        preload="metadata"
+                        className="h-full w-full object-cover"
+                        aria-hidden
+                        onError={() => handleVideoError(dance.id)}
+                      />
+                    )}
                   </div>
                   <div className="flex items-center justify-between px-4 py-3">
                     <span
