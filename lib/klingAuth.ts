@@ -18,7 +18,7 @@ function base64UrlEncode(data: Uint8Array | string): string {
 /**
  * Build a JWT for Kling API (HS256).
  * - header: { alg: "HS256", typ: "JWT" }
- * - payload: { iss: KLING_ACCESS_KEY, exp: now + 300 }
+ * - payload: { iss, nbf, exp } (nbf = Not Before, requis par Kling)
  * - signed with KLING_SECRET_KEY
  */
 function buildKlingJwt(): string | null {
@@ -28,7 +28,7 @@ function buildKlingJwt(): string | null {
 
   const header = { alg: "HS256" as const, typ: "JWT" as const };
   const now = Math.floor(Date.now() / 1000);
-  const payload = { iss: access, exp: now + 300 };
+  const payload = { iss: access, nbf: now, exp: now + 300 };
 
   const headerB64 = base64UrlEncode(JSON.stringify(header));
   const payloadB64 = base64UrlEncode(JSON.stringify(payload));
