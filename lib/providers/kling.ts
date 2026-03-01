@@ -67,15 +67,17 @@ export async function createKlingJob(
   const base = getBaseUrl();
   const official = isOfficialKling(base);
 
-  const path = official ? "/v1/videos/motion-create" : "/v2/video/generations";
+  // Official Kling (api-singapore.klingai.com) : image2video avec vidéo de référence (motion)
+  const path = official ? "/v1/videos/image2video" : "/v2/video/generations";
   const body = official
     ? {
-        image_url: imageUrl,
-        motion_url: referenceVideoUrl,
+        model: "kling-v2.6-pro",
+        image: imageUrl,
         prompt: prompt || "Person dancing, smooth movement, cultural dance",
-        keep_audio: false,
-        motion_direction: "video" as const,
-        mode: "professional" as const,
+        duration: 5,
+        aspect_ratio: "9:16",
+        mode: "professional",
+        reference_video_url: referenceVideoUrl,
       }
     : {
         model: "klingai/video-v2-6-pro-motion-control",
