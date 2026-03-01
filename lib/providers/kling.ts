@@ -57,6 +57,18 @@ function isOfficialKling(base: string): boolean {
 }
 
 /**
+ * Normalise l'image pour l'API Kling : si data URL (data:image/...;base64,XXX),
+ * retourne uniquement la partie base64 XXX ; sinon retourne tel quel (URL).
+ */
+function normalizeImageForKling(imageUrl: string): string {
+  const s = imageUrl.trim();
+  if (s.startsWith("data:") && s.includes(",")) {
+    return s.slice(s.indexOf(",") + 1);
+  }
+  return s;
+}
+
+/**
  * Create a Kling motion-control job (image + reference video).
  * Returns task ID for polling.
  */
@@ -67,12 +79,14 @@ export async function createKlingJob(
   const base = getBaseUrl();
   const official = isOfficialKling(base);
 
+  const imagePayload = normalizeImageForKling(imageUrl);
+
   // Official Kling (api-singapore.klingai.com) : image2video avec vidéo de référence (motion)
   const path = official ? "/v1/videos/image2video" : "/v2/video/generations";
   const body = official
     ? {
         model: "kling-v2.6-pro",
-        image: imageUrl,
+        image: imagePayload,
         prompt: prompt || "Person dancing, smooth movement, cultural dance",
         duration: 5,
         aspect_ratio: "9:16",
