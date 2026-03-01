@@ -91,7 +91,6 @@ export async function createKlingJob(
         duration: 5,
         aspect_ratio: "9:16",
         mode: "std",
-        sound: false,
         reference_video_url: referenceVideoUrl,
       }
     : {
@@ -103,18 +102,33 @@ export async function createKlingJob(
         keep_audio: false,
       };
 
-  console.log("[kling] createKlingJob", {
-    model: (body as { model: string }).model,
-    duration: official ? (body as { duration: number }).duration : 5,
-  });
+  const url = `${base}${path}`;
+  const payloadString = JSON.stringify(body);
+  const headers = getHeaders();
+  if (!("Content-Type" in headers) || !(headers as Record<string, string>)["Content-Type"]) {
+    (headers as Record<string, string>)["Content-Type"] = "application/json";
+  }
 
-  const res = await fetch(`${base}${path}`, {
+  console.log("Kling URL:", url);
+  console.log("Kling payload:", payloadString.slice(0, 2000));
+
+  const res = await fetch(url, {
     method: "POST",
-    headers: getHeaders(),
-    body: JSON.stringify(body),
+    headers,
+    body: payloadString,
   });
 
-  const errBody = await res.json().catch(() => ({}));
+  const text = await res.text();
+  console.log("Kling status:", res.status);
+  console.log("Kling response:", text);
+
+  let errBody: Record<string, unknown>;
+  try {
+    errBody = text ? JSON.parse(text) : {};
+  } catch {
+    errBody = {};
+  }
+
   if (!res.ok) {
     const msg =
       errBody?.error?.message ??
