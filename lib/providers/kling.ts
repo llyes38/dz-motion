@@ -122,20 +122,32 @@ export async function createKlingJob(
   console.log("Kling status:", res.status);
   console.log("Kling response:", text);
 
-  let errBody: Record<string, unknown>;
+  type KlingResponseBody = {
+    error?: { message?: string } | string;
+    message?: string;
+    msg?: string;
+    code?: number;
+    task_id?: string;
+    id?: string;
+    data?: { task_id?: string; id?: string };
+    details?: unknown;
+  };
+  let errBody: KlingResponseBody;
   try {
-    errBody = text ? JSON.parse(text) : {};
+    errBody = (text ? JSON.parse(text) : {}) as KlingResponseBody;
   } catch {
     errBody = {};
   }
 
   if (!res.ok) {
     const msg =
-      errBody?.error?.message ??
+      (typeof errBody?.error === "object" && errBody?.error !== null && "message" in errBody.error
+        ? (errBody.error as { message?: string }).message
+        : null) ??
       errBody?.message ??
       errBody?.msg ??
       (typeof errBody?.error === "string" ? errBody.error : null) ??
-      (typeof errBody?.message === "string" ? errBody.message : null);
+      null;
     const apiCode = errBody?.code;
     let message: string;
     if (apiCode === 1102 || (msg && /balance not enough|insufficient|solde/i.test(String(msg)))) {
