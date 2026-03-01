@@ -81,26 +81,32 @@ export async function createKlingJob(
 
   const imagePayload = normalizeImageForKling(imageUrl);
 
-  // Official Kling (api-singapore.klingai.com) : image2video avec vidéo de référence (motion)
+  // Official Kling (api-singapore.klingai.com) : image2video, 5s, sans audio, modèle standard (moins cher)
   const path = official ? "/v1/videos/image2video" : "/v2/video/generations";
   const body = official
     ? {
-        model: "kling-v2.6-pro",
+        model: "kling-v2.6-std",
         image: imagePayload,
         prompt: prompt || "Person dancing, smooth movement, cultural dance",
         duration: 5,
         aspect_ratio: "9:16",
-        mode: "pro",
+        mode: "std",
+        sound: false,
         reference_video_url: referenceVideoUrl,
       }
     : {
-        model: "klingai/video-v2-6-pro-motion-control",
+        model: "klingai/video-v2-6-standard-motion-control",
         image_url: imageUrl,
         video_url: referenceVideoUrl,
         character_orientation: "video" as const,
         prompt: prompt || "Person dancing, smooth movement, cultural dance",
         keep_audio: false,
       };
+
+  console.log("[kling] createKlingJob", {
+    model: (body as { model: string }).model,
+    duration: official ? (body as { duration: number }).duration : 5,
+  });
 
   const res = await fetch(`${base}${path}`, {
     method: "POST",
@@ -116,12 +122,17 @@ export async function createKlingJob(
       errBody?.msg ??
       (typeof errBody?.error === "string" ? errBody.error : null) ??
       (typeof errBody?.message === "string" ? errBody.message : null);
-    const message =
-      msg && typeof msg === "string" && !/no message available/i.test(msg)
-        ? msg
-        : res.status === 401
-          ? "Clé API invalide ou expirée. Vérifiez KLING_ACCESS_KEY, KLING_SECRET_KEY et KLING_API_BASE_URL."
-          : `Erreur API Kling (${res.status}). Vérifiez vos clés et le domaine.`;
+    const apiCode = errBody?.code;
+    let message: string;
+    if (apiCode === 1102 || (msg && /balance not enough|insufficient|solde/i.test(String(msg)))) {
+      message = "Solde du compte Kling insuffisant. Rechargez des crédits sur votre compte Kling (klingapi.com ou portail de votre fournisseur).";
+    } else if (res.status === 401) {
+      message = "Clé API invalide ou expirée. Vérifiez KLING_ACCESS_KEY, KLING_SECRET_KEY et KLING_API_BASE_URL.";
+    } else if (msg && typeof msg === "string" && !/no message available/i.test(msg)) {
+      message = msg;
+    } else {
+      message = `Erreur API Kling (${res.status}). Vérifiez vos clés et le domaine.`;
+    }
     const error: KlingApiError = {
       code: res.status,
       message,
